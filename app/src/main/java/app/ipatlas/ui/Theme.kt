@@ -103,6 +103,8 @@ object Type {
     val nav = TextStyle(fontFamily = barlow, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 16.sp)
     val mapLabel = TextStyle(fontFamily = barlow, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 14.sp)
     val mapPlace = TextStyle(fontFamily = barlow, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 17.sp)
+    /** States, provinces and countries on the chart: small, widely spaced capitals, the way charts letter regions. */
+    val mapRegion = TextStyle(fontFamily = barlow, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 13.sp, letterSpacing = 1.6.sp)
     val mapGrid = TextStyle(fontFamily = barlow, fontWeight = FontWeight.Normal, fontStyle = FontStyle.Italic, fontSize = 11.sp, lineHeight = 13.sp, fontFeatureSettings = "tnum")
 }
 

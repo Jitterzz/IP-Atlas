@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.ipatlas.data.Cooldowns
 import app.ipatlas.data.DeviceNet
 import app.ipatlas.data.DeviceNetwork
 import app.ipatlas.data.Dns
@@ -28,6 +29,7 @@ import app.ipatlas.data.Resolved
 import app.ipatlas.data.Source
 import app.ipatlas.data.Store
 import app.ipatlas.data.str
+import app.ipatlas.geo.GeoCache
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -145,13 +147,13 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             self.v6 = v6.fold({ Load.Ready(it) }, { Load.Failed("No IPv6 address") })
             val primary = v4.getOrNull() ?: v6.getOrNull()
             self.info = try {
-                val located = Providers.locate(primary, store.settings.order)
+                val located = Providers.locate(primary, store.settings.order, store.settings.ipapiKey)
                 // If ipify couldn't be reached, the location service still saw our address.
                 if (primary == null) {
                     val ip = IpAddress.parse(located.info.ip)
                     if (ip?.version == 4) self.v4 = Load.Ready(ip.toString()) else if (ip != null) self.v6 = Load.Ready(ip.toString())
                 }
-                Load.Ready(located.info)
+                Load.Ready(withMapPlace(located.info))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -159,6 +161,35 @@ class AppModel(app: Application) : AndroidViewModel(app) {
                     if (!device.connected) "This phone isn't connected to the internet right now." else e.message ?: "Couldn't look up your connection.",
                 )
             }
+        }
+    }
+
+    /**
+     * Names the city, state and country from the app's own map data when the services left them out but gave
+     * a spot (the nearest town of 15,000+ people within 40 km, and the state or country that spot is in).
+     */
+    private suspend fun withMapPlace(info: IpInfo): IpInfo {
+        val lat = info.latitude ?: return info
+        val lon = info.longitude ?: return info
+        if (info.city != null && info.region != null && info.countryCode != null) return info
+        val geo = try {
+            GeoCache.get(getApplication<Application>())
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            return info
+        }
+        return withContext(Dispatchers.Default) {
+            val city = if (info.city == null) geo.nearestCity(lat, lon, 40.0)?.name else null
+            val region = if (info.region == null) geo.stateName(lat, lon) else null
+            val code = info.countryCode ?: geo.countryCode(lat, lon)
+            val country = info.country ?: geo.countryName(lat, lon)
+            info.copy(
+                city = info.city ?: city,
+                region = info.region ?: region,
+                countryCode = code,
+                country = country,
+                placeFromMap = info.placeFromMap || city != null || region != null,
+            )
         }
     }
 
@@ -269,11 +300,11 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         launch { r.ptr = load("Reverse DNS") { Dns.reverse(ip) } }
         launch { r.rdap = load("The registry") { Rdap.lookup(target) } }
         try {
-            val located = Providers.locate(target.toString(), store.settings.order)
-            r.info = located.info
+            val located = Providers.locate(target.toString(), store.settings.order, store.settings.ipapiKey)
+            r.info = withMapPlace(located.info)
             r.notes = located.notes
             r.phase = Phase.DONE
-            remember(r, located.info)
+            remember(r, r.info)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -296,8 +327,17 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         r.compare = Load.Loading
         viewModelScope.launch {
             val others = Source.entries.filter { it != info.source }
+            val key = store.settings.ipapiKey
             val answers = supervisorScope {
-                others.map { s -> async { s to attempt { Providers.lookup(s, target.toString()) } } }.map { it.await() }
+                others.map { s ->
+                    async {
+                        if (Cooldowns.blocked(s)) {
+                            s to Result.failure<IpInfo>(LookupError("is out of free lookups until ${Cooldowns.untilText(s)}"))
+                        } else {
+                            s to attempt { Providers.lookup(s, target.toString(), key) }.onFailure { Cooldowns.note(s, it) }
+                        }
+                    }
+                }.map { it.await() }
             }
             r.compare = Load.Ready(
                 answers.map { (s, res) ->
@@ -307,7 +347,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
                     } else {
                         null
                     }
-                    Compared(s, other, res.exceptionOrNull()?.let { "${s.label} ${Http.reason(it)}." }, km)
+                    Compared(s, other, res.exceptionOrNull()?.let { "${s.label} ${Http.reason(it).removeSuffix(".")}." }, km)
                 },
             )
         }

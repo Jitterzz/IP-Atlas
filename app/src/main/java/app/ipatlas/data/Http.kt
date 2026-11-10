@@ -11,8 +11,8 @@ import java.net.SocketTimeoutException
 import java.net.URL
 import java.net.UnknownHostException
 
-/** A web request that came back with an error code. */
-class HttpError(val code: Int, val body: String) : IOException("HTTP $code")
+/** A web request that came back with an error code ([retryAfterSec] from the Retry-After header, if sent). */
+class HttpError(val code: Int, val body: String, val retryAfterSec: Long? = null) : IOException("HTTP $code")
 
 /** A service answered, but said it couldn't do the lookup. */
 class LookupError(message: String) : Exception(message)
@@ -34,7 +34,9 @@ object Http {
                 val code = conn.responseCode
                 val stream = if (code in 200..299) conn.inputStream else conn.errorStream
                 val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
-                if (code !in 200..299) throw HttpError(code, body.take(400))
+                if (code !in 200..299) {
+                    throw HttpError(code, body.take(400), conn.getHeaderField("Retry-After")?.trim()?.toLongOrNull())
+                }
                 body
             } finally {
                 conn.disconnect()
@@ -55,7 +57,7 @@ object Http {
     /** A short, plain reason a request failed, for showing on screen. */
     fun reason(e: Throwable): String = when (e) {
         is HttpError -> when (e.code) {
-            429 -> "hit its limit for now"
+            429 -> "is out of free lookups for now"
             401, 403 -> "turned the request away"
             404 -> "doesn't have that address"
             in 500..599 -> "is having trouble (error ${e.code})"

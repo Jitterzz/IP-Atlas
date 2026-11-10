@@ -17,12 +17,37 @@ class Store(context: Context) {
     var history by mutableStateOf(readHistory())
         private set
 
+    init {
+        // Remember which services are out of free lookups, even if the app is closed and reopened.
+        val saved = prefs.getString(K_COOLDOWNS, null)
+        if (saved != null) {
+            try {
+                val o = JSONObject(saved)
+                val map = HashMap<String, Long>()
+                val keys = o.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    map[k] = o.optLong(k)
+                }
+                Cooldowns.load(map)
+            } catch (e: Exception) {
+                // Start fresh.
+            }
+        }
+        Cooldowns.persist = { map ->
+            val o = JSONObject()
+            for ((k, v) in map) o.put(k, v)
+            prefs.edit().putString(K_COOLDOWNS, o.toString()).apply()
+        }
+    }
+
     fun updateSettings(change: (Settings) -> Settings) {
         settings = change(settings)
         prefs.edit()
             .putString(K_THEME, settings.theme.key)
             .putString(K_SOURCE, settings.source?.key ?: "auto")
             .putBoolean(K_SAVE, settings.saveHistory)
+            .putString(K_IPAPI_KEY, settings.ipapiKey)
             .apply()
     }
 
@@ -66,6 +91,7 @@ class Store(context: Context) {
             theme = ThemeMode.fromKey(prefs.getString(K_THEME, null)),
             source = if (sourceKey == "auto") null else Source.fromKey(sourceKey),
             saveHistory = prefs.getBoolean(K_SAVE, true),
+            ipapiKey = prefs.getString(K_IPAPI_KEY, null) ?: "",
         )
     }
 
@@ -113,5 +139,7 @@ class Store(context: Context) {
         const val K_SOURCE = "source"
         const val K_SAVE = "save_history"
         const val K_HISTORY = "history"
+        const val K_IPAPI_KEY = "ipapi_key"
+        const val K_COOLDOWNS = "cooldowns"
     }
 }

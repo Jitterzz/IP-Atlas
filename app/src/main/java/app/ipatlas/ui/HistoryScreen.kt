@@ -55,52 +55,56 @@ fun HistoryScreen(model: AppModel) {
     val starred = shown.filter { it.starred }
     val rest = shown.filterNot { it.starred }
 
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = statusTop + 18.dp, bottom = 28.dp),
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("History", style = Type.screenTitle, color = p.ink, modifier = Modifier.weight(1f))
-                if (all.isNotEmpty()) {
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = statusTop + 18.dp, bottom = 28.dp),
+        ) {
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Text("History", style = Type.screenTitle, color = p.ink, modifier = Modifier.weight(1f))
+                    if (all.isNotEmpty()) {
+                        Text(
+                            "Clear",
+                            style = Type.chip,
+                            color = p.depth,
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(role = Role.Button) { confirmClear = true }.padding(8.dp),
+                        )
+                    }
+                }
+            }
+            if (all.isEmpty()) {
+                item {
                     Text(
-                        "Clear",
-                        style = Type.chip,
-                        color = p.depth,
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(role = Role.Button) { confirmClear = true }.padding(8.dp),
+                        "Nothing here yet. Every address and domain you look up is kept here, newest first. Star the ones you want to keep at the top.",
+                        style = Type.body,
+                        color = p.ink2,
+                        modifier = Modifier.padding(top = 18.dp),
                     )
+                }
+                return@LazyColumn
+            }
+            item { FilterField(filter, { filter = it }, Modifier.padding(top = 14.dp)) }
+            if (shown.isEmpty()) {
+                item {
+                    Text("Nothing matches \"$f\".", style = Type.body, color = p.ink2, modifier = Modifier.padding(top = 18.dp))
+                }
+            }
+            if (starred.isNotEmpty()) {
+                item { SectionTitle("Starred") }
+                items(starred, key = { "s:" + it.query }) { e ->
+                    EntryRow(model, e, divider = e != starred.last(), onCopy = { copy("Address", it) })
+                }
+            }
+            if (rest.isNotEmpty()) {
+                item { SectionTitle(if (starred.isEmpty()) "Recent" else "Everything else") }
+                items(rest, key = { "r:" + it.query }) { e ->
+                    EntryRow(model, e, divider = e != rest.last(), onCopy = { copy("Address", it) })
                 }
             }
         }
-        if (all.isEmpty()) {
-            item {
-                Text(
-                    "Nothing here yet. Every address and domain you look up is kept here, newest first. Star the ones you want to keep at the top.",
-                    style = Type.body,
-                    color = p.ink2,
-                    modifier = Modifier.padding(top = 18.dp),
-                )
-            }
-            return@LazyColumn
-        }
-        item { FilterField(filter, { filter = it }, Modifier.padding(top = 14.dp)) }
-        if (shown.isEmpty()) {
-            item {
-                Text("Nothing matches \"$f\".", style = Type.body, color = p.ink2, modifier = Modifier.padding(top = 18.dp))
-            }
-        }
-        if (starred.isNotEmpty()) {
-            item { SectionTitle("Starred") }
-            items(starred, key = { "s:" + it.query }) { e ->
-                EntryRow(model, e, divider = e != starred.last(), onCopy = { copy("Address", it) })
-            }
-        }
-        if (rest.isNotEmpty()) {
-            item { SectionTitle(if (starred.isEmpty()) "Recent" else "Everything else") }
-            items(rest, key = { "r:" + it.query }) { e ->
-                EntryRow(model, e, divider = e != rest.last(), onCopy = { copy("Address", it) })
-            }
-        }
+
+        StatusScrim()
     }
 
     if (confirmClear) {

@@ -9,8 +9,9 @@ world in the style of a nautical chart.
 - **Your connection:** your public IPv4 and IPv6 addresses, provider and location on the world chart, plus what the
   phone itself knows: Wi-Fi or mobile data, VPN on or off, local address, gateway, DNS servers, Private DNS,
   interface and MTU. It checks again whenever the connection changes.
-- **The chart:** a close-up of where the address is, with latitude and longitude lines, country borders, nearby
-  cities, a scale bar and the chart's magenta light on the spot. Zoom in and out, or open the spot in Maps.
+- **The chart:** a close-up of where the address is, with latitude and longitude lines, country and state borders,
+  the names of nearby towns (15,000+ people) and of the states, provinces and countries around, a scale bar and the
+  chart's magenta light on the spot. Zoom in for more towns, out for more of the area, or open the spot in Maps.
 - **Network:** provider, organization, ASN, route, range, network name, hostname (reverse DNS), domain, type of
   network, data center and registry.
 - **Location and time:** city, region, postal code, country, continent, coordinates (decimal and degrees),
@@ -34,11 +35,12 @@ All free, no accounts or keys. Lookups go straight from the phone to these servi
 
 | What | Service |
 | --- | --- |
-| Location, network, privacy checks | [ipapi.is](https://ipapi.is) (1,000 a day), then [ipwho.is](https://ipwhois.io) and [FreeIPAPI](https://freeipapi.com) if it's busy. Pick the order in Settings. |
+| Location and network | [ipwho.is](https://ipwhois.io) (1,000 a day), then [FreeIPAPI](https://freeipapi.com) (60 a minute), then [ipapi.is](https://ipapi.is). If one leaves out the city, state or spot, the next fills the gaps; a service that's out of free lookups is left alone until its limit resets. Pick the order in Settings. |
+| Privacy checks and abuse contacts | [ipapi.is](https://ipapi.is) with a free key (add it in Settings; 1,000 a day). Without a key it gives only city, state and network, 30 a day. |
 | Your public address | [ipify](https://www.ipify.org) |
 | DNS (domains, hostnames) | Cloudflare DNS over HTTPS, with Google Public DNS as backup |
 | Registration | RDAP through [rdap.org](https://rdap.org) |
-| The charts (offline, built into the app) | GLOBE land mask, Natural Earth borders (public domain), GeoNames cities (CC BY 4.0) |
+| The charts (offline, built into the app) | GLOBE land mask, Natural Earth 1:50m countries and states (public domain, via plotly's [sane-topojson](https://github.com/plotly/sane-topojson), MIT), GeoNames towns of 15,000+ people (CC BY 4.0) |
 
 `tools/make_geodata.py` builds the chart data in `app/src/main/assets/geo`. `tools/preview.py` renders screenshot
 previews from the app's own fonts, icons, colors and chart data.

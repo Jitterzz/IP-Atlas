@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,147 +50,154 @@ fun HomeScreen(model: AppModel) {
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val chartHeight = statusTop + 292.dp
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        // The world, with you on it. The search box sits across the chart's bottom edge.
-        Box(Modifier.fillMaxWidth().height(chartHeight + 28.dp)) {
-            WorldChart(
-                modifier = Modifier.fillMaxWidth().height(chartHeight),
-                pinLat = info?.latitude,
-                pinLon = info?.longitude,
-                top = statusTop + 50.dp,
-                bottom = 92.dp,
-                scanning = self.loading,
-                pingKey = info?.ip,
-            )
-            Row(
-                Modifier.fillMaxWidth().padding(top = statusTop).padding(start = 20.dp, end = 12.dp).height(52.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Wordmark()
-                Spacer(Modifier.weight(1f))
-                RoundButton(Glyph.Refresh, "Check my connection again", onClick = { model.refreshSelf() }, size = 40.dp, iconSize = 20.dp)
-            }
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = chartHeight - 104.dp)) {
-                Text("Your public address", style = Type.small, color = p.ink2)
-                val mine = self.primary
-                when {
-                    mine != null -> Text(
-                        mine,
-                        style = if (mine.contains(':')) Type.place.copy(fontFamily = Type.plex) else Type.ipHero,
-                        color = p.ink,
+    val scroll = rememberScrollState()
+    val density = LocalDensity.current
+    val scrimFrom = with(density) { (chartHeight - statusTop - 24.dp).toPx() }
+    val scrimLength = with(density) { 24.dp.toPx() }
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
+            // The world, with you on it. The search box sits across the chart's bottom edge.
+            Box(Modifier.fillMaxWidth().height(chartHeight + 28.dp)) {
+                WorldChart(
+                    modifier = Modifier.fillMaxWidth().height(chartHeight),
+                    pinLat = info?.latitude,
+                    pinLon = info?.longitude,
+                    top = statusTop + 50.dp,
+                    bottom = 92.dp,
+                    scanning = self.loading,
+                    pingKey = info?.ip,
+                )
+                Row(
+                    Modifier.fillMaxWidth().padding(top = statusTop).padding(start = 20.dp, end = 12.dp).height(52.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Wordmark()
+                    Spacer(Modifier.weight(1f))
+                    RoundButton(Glyph.Refresh, "Check my connection again", onClick = { model.refreshSelf() }, size = 40.dp, iconSize = 20.dp)
+                }
+                Column(Modifier.padding(start = 20.dp, end = 20.dp, top = chartHeight - 104.dp)) {
+                    Text("Your public address", style = Type.small, color = p.ink2)
+                    val mine = self.primary
+                    when {
+                        mine != null -> Text(
+                            mine,
+                            style = if (mine.contains(':')) Type.place.copy(fontFamily = Type.plex) else Type.ipHero,
+                            color = p.ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clickable(onClickLabel = "Copy") { copy("Address", mine) },
+                        )
+                        self.loading -> Box(Modifier.height(32.dp), contentAlignment = Alignment.CenterStart) { Shimmer(Modifier.width(190.dp), height = 20.dp) }
+                        else -> Text("Not found", style = Type.ipHero, color = p.ink3)
+                    }
+                    Text(
+                        info?.let { listOfNotNull(it.provider, it.shortPlace.ifEmpty { null }).joinToString(", ") } ?: " ",
+                        style = Type.label,
+                        color = p.ink2,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.clickable(onClickLabel = "Copy") { copy("Address", mine) },
                     )
-                    self.loading -> Box(Modifier.height(32.dp), contentAlignment = Alignment.CenterStart) { Shimmer(Modifier.width(190.dp), height = 20.dp) }
-                    else -> Text("Not found", style = Type.ipHero, color = p.ink3)
                 }
-                Text(
-                    info?.let { listOfNotNull(it.provider, it.shortPlace.ifEmpty { null }).joinToString(", ") } ?: " ",
-                    style = Type.label,
-                    color = p.ink2,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            SearchField(
-                value = model.search,
-                onValueChange = {
-                    model.search = it
-                    model.searchError = null
-                },
-                onSubmit = {
-                    focus.clearFocus()
-                    model.submit()
-                },
-                onPaste = {
-                    clipboard.getText()?.text?.let { pasted ->
-                        model.search = app.ipatlas.data.Queries.findIn(pasted) ?: pasted.trim().take(200)
+                SearchField(
+                    value = model.search,
+                    onValueChange = {
+                        model.search = it
                         model.searchError = null
-                    }
-                },
-                hasError = model.searchError != null,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp),
-            )
-        }
-
-        Column(Modifier.padding(horizontal = 20.dp)) {
-            model.searchError?.let {
-                Text(it, style = Type.small, color = p.flare, modifier = Modifier.padding(top = 8.dp, start = 2.dp))
-            }
-
-            // What kind of connection this is, at a glance.
-            Row(
-                Modifier.fillMaxWidth().padding(top = 16.dp).horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Tag(if (device.vpn) "VPN on" else "VPN off", Glyph.Lock, flagged = device.vpn)
-                Tag(
-                    if (device.vpn && device.underlying != null) "${device.underlying.label} under VPN" else device.transport.label,
-                    transportGlyph(if (device.vpn) device.underlying ?: Transport.VPN else device.transport),
+                    },
+                    onSubmit = {
+                        focus.clearFocus()
+                        model.submit()
+                    },
+                    onPaste = {
+                        clipboard.getText()?.text?.let { pasted ->
+                            model.search = app.ipatlas.data.Queries.findIn(pasted) ?: pasted.trim().take(200)
+                            model.searchError = null
+                        }
+                    },
+                    hasError = model.searchError != null,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp),
                 )
-                when (self.v6) {
-                    is Load.Ready -> Tag("IPv6 ready", Glyph.Globe)
-                    is Load.Failed -> Tag("IPv4 only", Glyph.Globe)
-                    else -> Unit
-                }
             }
 
-            SectionTitle("Your connection", action = if (self.primary != null) "Full details" else null, onAction = { model.openMine() })
-            when (val load = self.info) {
-                is Load.Failed -> {
-                    Spacer(Modifier.height(6.dp))
-                    Banner(load.message, Glyph.Warning, action = "Try again", onAction = { model.refreshSelf() })
+            Column(Modifier.padding(horizontal = 20.dp)) {
+                model.searchError?.let {
+                    Text(it, style = Type.small, color = p.flare, modifier = Modifier.padding(top = 8.dp, start = 2.dp))
                 }
-                else -> {
-                    val v4 = (self.v4 as? Load.Ready)?.value
-                    val v6 = (self.v6 as? Load.Ready)?.value
-                    if (self.v4 == Load.Loading) LoadingRow("Public IPv4") else InfoRow("Public IPv4", v4 ?: "None", mono = v4 != null)
-                    if (self.v6 == Load.Loading) LoadingRow("Public IPv6", 0.7f) else InfoRow("Public IPv6", v6 ?: "None", mono = v6 != null)
-                    if (load == Load.Loading) {
-                        LoadingRow("Provider", 0.5f)
-                        LoadingRow("Location", 0.6f)
-                        LoadingRow("Network", 0.3f, divider = false)
-                    } else if (info != null) {
-                        InfoRow("Provider", info.provider)
-                        InfoRow("Location", (Geo.flag(info.countryCode) + " " + info.shortPlace).trim().ifEmpty { null })
-                        InfoRow("Network", info.asLabel?.let { a -> listOfNotNull(a, info.org ?: info.asnName).joinToString("  ") })
-                        InfoRow("Time zone", info.timeZone, divider = false)
+
+                // What kind of connection this is, at a glance.
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 16.dp).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Tag(if (device.vpn) "VPN on" else "VPN off", Glyph.Lock, flagged = device.vpn)
+                    Tag(
+                        if (device.vpn && device.underlying != null) "${device.underlying.label} under VPN" else device.transport.label,
+                        transportGlyph(if (device.vpn) device.underlying ?: Transport.VPN else device.transport),
+                    )
+                    when (self.v6) {
+                        is Load.Ready -> Tag("IPv6 ready", Glyph.Globe)
+                        is Load.Failed -> Tag("IPv4 only", Glyph.Globe)
+                        else -> Unit
                     }
                 }
-            }
 
-            SectionTitle("This phone")
-            if (!device.connected) {
-                Text("Not connected to a network.", style = Type.label, color = p.ink2, modifier = Modifier.padding(vertical = 10.dp))
-            } else {
-                InfoRow(
-                    "Connection",
-                    if (device.vpn) "VPN" + (device.underlying?.let { " through ${it.label}" } ?: "") else device.transport.label,
-                )
-                InfoRow("Local address", device.localV4.firstOrNull(), mono = true)
-                InfoRow("Local IPv6", device.localV6.firstOrNull(), mono = true)
-                InfoRow("Gateway", device.gateway, mono = true)
-                InfoRow("DNS servers", device.dns.joinToString("\n").ifEmpty { null }, mono = true)
-                InfoRow("Private DNS", device.privateDns)
-                InfoRow("Interface", device.iface?.let { i -> i + (device.mtu?.let { ", MTU $it" } ?: "") })
-                InfoRow("Metered", device.metered?.let { if (it) "Yes" else "No" }, divider = false)
-            }
+                SectionTitle("Your connection", action = if (self.primary != null) "Full details" else null, onAction = { model.openMine() })
+                when (val load = self.info) {
+                    is Load.Failed -> {
+                        Spacer(Modifier.height(6.dp))
+                        Banner(load.message, Glyph.Warning, action = "Try again", onAction = { model.refreshSelf() })
+                    }
+                    else -> {
+                        val v4 = (self.v4 as? Load.Ready)?.value
+                        val v6 = (self.v6 as? Load.Ready)?.value
+                        if (self.v4 == Load.Loading) LoadingRow("Public IPv4") else InfoRow("Public IPv4", v4 ?: "None", mono = v4 != null)
+                        if (self.v6 == Load.Loading) LoadingRow("Public IPv6", 0.7f) else InfoRow("Public IPv6", v6 ?: "None", mono = v6 != null)
+                        if (load == Load.Loading) {
+                            LoadingRow("Provider", 0.5f)
+                            LoadingRow("Location", 0.6f)
+                            LoadingRow("Network", 0.3f, divider = false)
+                        } else if (info != null) {
+                            InfoRow("Provider", info.provider)
+                            InfoRow("Location", (Geo.flag(info.countryCode) + " " + info.shortPlace).trim().ifEmpty { null })
+                            InfoRow("Network", info.asLabel?.let { a -> listOfNotNull(a, info.org ?: info.asnName).joinToString("  ") })
+                            InfoRow("Time zone", info.timeZone, divider = false)
+                        }
+                    }
+                }
 
-            SectionTitle("Recent", action = if (model.store.history.isNotEmpty()) "History" else null, onAction = { model.tab = Tab.HISTORY })
-            val recent = model.store.history.take(4)
-            if (recent.isEmpty()) {
-                Text(
-                    "Addresses and domains you look up show up here. You can also select an address in any app and pick Look up IP.",
-                    style = Type.label,
-                    color = p.ink2,
-                    modifier = Modifier.padding(vertical = 10.dp),
-                )
-            } else {
-                recent.forEachIndexed { i, e -> HistoryRow(e, onOpen = { model.openEntry(e) }, divider = i < recent.lastIndex) }
+                SectionTitle("This phone")
+                if (!device.connected) {
+                    Text("Not connected to a network.", style = Type.label, color = p.ink2, modifier = Modifier.padding(vertical = 10.dp))
+                } else {
+                    InfoRow(
+                        "Connection",
+                        if (device.vpn) "VPN" + (device.underlying?.let { " through ${it.label}" } ?: "") else device.transport.label,
+                    )
+                    InfoRow("Local address", device.localV4.firstOrNull(), mono = true)
+                    InfoRow("Local IPv6", device.localV6.firstOrNull(), mono = true)
+                    InfoRow("Gateway", device.gateway, mono = true)
+                    InfoRow("DNS servers", device.dns.joinToString("\n").ifEmpty { null }, mono = true)
+                    InfoRow("Private DNS", device.privateDns)
+                    InfoRow("Interface", device.iface?.let { i -> i + (device.mtu?.let { ", MTU $it" } ?: "") })
+                    InfoRow("Metered", device.metered?.let { if (it) "Yes" else "No" }, divider = false)
+                }
+
+                SectionTitle("Recent", action = if (model.store.history.isNotEmpty()) "History" else null, onAction = { model.tab = Tab.HISTORY })
+                val recent = model.store.history.take(4)
+                if (recent.isEmpty()) {
+                    Text(
+                        "Addresses and domains you look up show up here. You can also select an address in any app and pick Look up IP.",
+                        style = Type.label,
+                        color = p.ink2,
+                        modifier = Modifier.padding(vertical = 10.dp),
+                    )
+                } else {
+                    recent.forEachIndexed { i, e -> HistoryRow(e, onOpen = { model.openEntry(e) }, divider = i < recent.lastIndex) }
+                }
+                Spacer(Modifier.height(28.dp))
             }
-            Spacer(Modifier.height(28.dp))
         }
+        StatusScrim { ((scroll.value - scrimFrom) / scrimLength).coerceIn(0f, 1f) }
     }
 }
 

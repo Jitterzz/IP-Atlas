@@ -133,7 +133,7 @@ fun ResultScreen(model: AppModel, r: ResultState) {
                     NetworkSection(r, info)
                     LocationSection(info, onMap = { lat, lon -> context.openMap(lat, lon, info.place.ifEmpty { info.ip }, toaster) })
                     info.timeZone?.let { TimeSection(it) }
-                    PrivacySection(info)
+                    PrivacySection(info, hasKey = model.store.settings.ipapiKey.isNotBlank())
                     AbuseSection(r, info, onEmail = { context.email(it, toaster) }, onCall = { context.dial(it, toaster) })
                 } else if (r.phase == Phase.LOCATING) {
                     SectionTitle("Network")
@@ -341,6 +341,14 @@ private fun LocationSection(info: IpInfo, onMap: (Double, Double) -> Unit) {
     InfoRow("Currency", info.currency)
     InfoRow("Languages", info.languages)
     InfoRow("In the EU", if (info.isEu == true) "Yes" else null, divider = false)
+    if (info.placeFromMap) {
+        Text(
+            "The services gave only the spot, so the town and state are named from IP Atlas's own map.",
+            style = Type.small,
+            color = LocalPalette.current.ink3,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
 }
 
 @Composable
@@ -383,7 +391,7 @@ private fun TimeSection(zoneId: String) {
 }
 
 @Composable
-private fun PrivacySection(info: IpInfo) {
+private fun PrivacySection(info: IpInfo, hasKey: Boolean) {
     val p = LocalPalette.current
     val checks = listOf(
         "VPN" to info.isVpn,
@@ -398,7 +406,11 @@ private fun PrivacySection(info: IpInfo) {
     SectionTitle("Privacy checks")
     if (checks.isEmpty()) {
         Text(
-            "${info.source.label} doesn't check for VPNs, proxies or Tor. Set Settings > Where lookups come from to ipapi.is to see these.",
+            if (hasKey) {
+                "ipapi.is didn't answer this time, so there are no VPN, proxy or Tor checks. Try again later."
+            } else {
+                "VPN, proxy and Tor checks come from ipapi.is with a free key. Add one in Settings to see them here."
+            },
             style = Type.label,
             color = p.ink2,
             modifier = Modifier.padding(vertical = 10.dp),
@@ -542,7 +554,7 @@ private fun Sources(r: ResultState, info: IpInfo) {
     val p = LocalPalette.current
     val registry = (r.rdap as? Load.Ready)?.value?.registry?.substringBefore(" (")
     val parts = buildList {
-        add("Location and network from ${info.source.label}")
+        add("Location and network from ${info.source.label}" + (info.filledFrom?.let { " (gaps filled from ${it.label})" } ?: ""))
         add("hostname" + (if (r.host != null) " and DNS records" else "") + " from Cloudflare DNS")
         if (registry != null) add("registration from $registry over RDAP")
     }

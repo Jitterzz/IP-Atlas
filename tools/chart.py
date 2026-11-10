@@ -17,8 +17,34 @@ class Geo:
             _, self.w, self.h = struct.unpack(">iii", fh.read(12))
             self.bits = zlib.decompress(fh.read())
         self.cells = self.w // 360
-        self.borders = []
-        with open(os.path.join(GEO, "borders.bin"), "rb") as fh:
+        self.borders = self._lines("borders.bin")
+        self.states = self._lines("states.bin")
+        with open(os.path.join(GEO, "regions.bin"), "rb") as fh:
+            assert fh.read(4) == b"RGNS"
+            _, self.rw, self.rh = struct.unpack(">iii", fh.read(12))
+            grids = zlib.decompress(fh.read())
+        self.country_grid = grids[: self.rw * self.rh]
+        self.state_grid = grids[self.rw * self.rh :]
+        self.country_names, self.country_codes, self.state_names, self.state_countries = {}, {}, {}, {}
+        with open(os.path.join(GEO, "regions.tsv"), encoding="utf-8") as fh:
+            for line in fh:
+                kind, idx, cc, name = line.rstrip("\n").split("\t")
+                if kind == "C":
+                    self.country_names[int(idx)] = name
+                    self.country_codes[int(idx)] = cc
+                else:
+                    self.state_names[int(idx)] = name
+                    self.state_countries[int(idx)] = cc
+        self.with_states = set(self.state_countries.values())
+        self.cities = []
+        with open(os.path.join(GEO, "cities.tsv"), encoding="utf-8") as fh:
+            for line in fh:
+                name, lat, lon, pop, cc = line.rstrip("\n").split("\t")
+                self.cities.append((name, float(lat), float(lon), int(pop), cc))
+
+    def _lines(self, name):
+        out = []
+        with open(os.path.join(GEO, name), "rb") as fh:
             data = fh.read()
         assert data[:4] == b"BRDR"
         _, n = struct.unpack(">ii", data[4:12])
@@ -31,12 +57,20 @@ class Geo:
                 lon, lat = struct.unpack(">hh", data[p : p + 4])
                 p += 4
                 pts.append((lon / 100.0, lat / 100.0))
-            self.borders.append(pts)
-        self.cities = []
-        with open(os.path.join(GEO, "cities.tsv"), encoding="utf-8") as fh:
-            for line in fh:
-                name, lat, lon, pop, cc = line.rstrip("\n").split("\t")
-                self.cities.append((name, float(lat), float(lon), int(pop), cc))
+            out.append(pts)
+        return out
+
+    def _cell(self, lat, lon):
+        cpd = self.rw / 360.0
+        r = min(self.rh - 1, max(0, int((90.0 - lat) * cpd)))
+        c = int(math.floor((lon + 180.0) * cpd)) % self.rw
+        return r * self.rw + c
+
+    def country_at(self, lat, lon):
+        return self.country_grid[self._cell(lat, lon)]
+
+    def state_at(self, lat, lon):
+        return self.state_grid[self._cell(lat, lon)]
 
     def land(self, lat, lon):
         r = min(self.h - 1, max(0, int((90.0 - lat) * self.cells)))

@@ -180,31 +180,43 @@ def region_svg(p, w, h, lat, lon, km, label, top, bottom, ping=None):
         tw = text_w(t, "barlow_italic", 11)
         if x + tw + 4 < w:
             labels.append(f'<text x="{x + 3:.1f}" y="{h - bottom - 2 - 13 + 10.5:.1f}" font-family="Barlow" font-style="italic" font-size="11" fill="{p["ink3"]}">{t}</text>')
-    # Borders
-    ba = 0.5 if p["dark"] else 0.6
-    for line in GEO.borders:
-        lats = [pt[1] for pt in line]
-        if max(lats) < lat - span_lat or min(lats) > lat + span_lat:
-            continue
-        pts = [reg.project(la, lo) for lo, la in line]
-        if all(not (-60 < x < w + 60 and -60 < y < h + 60) for x, y in pts):
-            continue
-        out.append('<polyline fill="none" stroke="%s" stroke-opacity="%s" stroke-width="1" stroke-dasharray="5 3" points="%s"/>' % (p["border"], ba, " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)))
+    # State lines (dotted) under country borders (dashed): drawLines()
+    def lines(src, opacity, width, dash, halo_w):
+        for line in src:
+            lats = [pt[1] for pt in line]
+            if max(lats) < lat - span_lat or min(lats) > lat + span_lat:
+                continue
+            pts = [reg.project(la, lo) for lo, la in line]
+            if all(not (-60 < x < w + 60 and -60 < y < h + 60) for x, y in pts):
+                continue
+            ptxt = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+            out.append(f'<polyline fill="none" stroke="{p["chart"]}" stroke-opacity="0.85" stroke-width="{halo_w}" stroke-linecap="round" stroke-linejoin="round" points="{ptxt}"/>')
+            out.append(f'<polyline fill="none" stroke="{p["ink2"]}" stroke-opacity="{opacity}" stroke-width="{width}" stroke-dasharray="{dash}" points="{ptxt}"/>')
+
     a = 0.62 if p["dark"] else 0.82
     out.append(f'<g fill="{p["land"]}" fill-opacity="{a}">' + "".join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="1.05"/>' for x, y in dots) + "</g>")
+    lines(GEO.states, 0.7, 1, "4 2.5", 3)
+    lines(GEO.borders, 0.9, 1.3, "7 2.5 1.5 2.5", 4)
     out.extend(labels)
-    # Cities (drawCities)
+    # Place names (drawPlaceNames): cities first, then states/countries in the room left.
     px, py = reg.project(lat, lon)
     placed = [(px - 8, py - 24, px + 22, py + 8)]
     if label:
         tw = text_w(label, "barlow_semibold", 14)
         placed.append((px + 8, py + 2, px + 14 + tw, py + 8 + 17))
-    shown = 0
+    top_lim, bottom_lim = top + 8, h - bottom - 18
+
+    def free(rc, pad=2):
+        infl = (rc[0] - pad, rc[1] - pad, rc[2] + pad, rc[3] + pad)
+        return not any(not (infl[2] <= r[0] or infl[0] >= r[2] or infl[3] <= r[1] or infl[1] >= r[3]) for r in placed)
+
+    max_cities = 12 if km <= 300 else 10 if km <= 700 else 9 if km <= 1600 else 8
+    city_labels = []
     for name, cla, clo, pop, cc in GEO.cities:
-        if shown >= 7:
+        if len(city_labels) >= max_cities:
             break
         x, y = reg.project(cla, clo)
-        if x < 6 or x > w - 6 or y < top + 8 or y > h - bottom - 18:
+        if x < 6 or x > w - 6 or y < top_lim or y > bottom_lim:
             continue
         if math.hypot(x - px, y - py) < 22:
             continue
@@ -212,19 +224,66 @@ def region_svg(p, w, h, lat, lon, km, label, top, bottom, ping=None):
         th = 14
         right_r = (x - 3, y - th / 2, x + 6 + tw, y + th / 2)
         left_r = (x - 6 - tw, y - th / 2, x + 3, y + th / 2)
-
-        def free(rc):
-            infl = (rc[0] - 2, rc[1] - 2, rc[2] + 2, rc[3] + 2)
-            return not any(not (infl[2] <= r[0] or infl[0] >= r[2] or infl[3] <= r[1] or infl[1] >= r[3]) for r in placed)
-
         fits_right = right_r[2] <= w - 2 and free(right_r)
         fits_left = left_r[0] >= 2 and free(left_r)
         if not fits_right and not fits_left:
             continue
         left = not fits_right
         placed.append(left_r if left else right_r)
-        shown += 1
-        tx = x - 5 - tw if left else x + 5
+        city_labels.append((x, y, name, tw, x - 5 - tw if left else x + 5))
+    step = 14
+    show_states = km <= 3600
+    show_all_countries = km >= 3000
+
+    def region_key(x, y):
+        la, lo = reg.unproject(x, y)
+        if not (-85 < la < 85):
+            return 0
+        lo = ((lo + 540) % 360) - 180
+        st = GEO.state_at(la, lo) if show_states else 0
+        if st:
+            return 1000 + st
+        c = GEO.country_at(la, lo)
+        return c if c and (show_all_countries or GEO.country_codes.get(c) not in GEO.with_states) else 0
+
+    cells = {}
+    y = top_lim + step / 2
+    while y < bottom_lim:
+        x = step / 2
+        while x < w:
+            key = region_key(x, y)
+            if key:
+                cells.setdefault(key, []).append((x, y))
+            x += step
+        y += step
+    region_labels = []
+    for key, pts in sorted(cells.items(), key=lambda kv: -len(kv[1])):
+        if len(region_labels) >= 6 or len(pts) < 4:
+            break
+        name = GEO.state_names.get(key - 1000) if key > 1000 else GEO.country_names.get(key)
+        if not name:
+            continue
+        text = name.upper()
+        tw = text_w(text, "barlow_medium", 11) + 1.6 * len(text)
+        th = 13
+        mx = sum(pt[0] for pt in pts) / len(pts)
+        my = sum(pt[1] for pt in pts) / len(pts)
+        cands = ([(mx, my)] if region_key(mx, my) == key else []) + sorted(pts, key=lambda q: (q[0] - mx) ** 2 + (q[1] - my) ** 2)
+        for cxy in cands:
+            cx = min(max(cxy[0], tw / 2 + 4), w - tw / 2 - 4)
+            cy = min(max(cxy[1], top_lim + th / 2), bottom_lim - th / 2)
+            rect = (cx - tw / 2, cy - th / 2, cx + tw / 2, cy + th / 2)
+            if not free(rect, 3):
+                continue
+            placed.append(rect)
+            region_labels.append((rect[0], rect[1], text))
+            break
+    for x0, y0, text in region_labels:
+        tw = text_w(text, "barlow_medium", 11) + 1.6 * len(text)
+        out.append(f'<rect x="{x0 - 3:.1f}" y="{y0 - 1:.1f}" width="{tw + 6:.1f}" height="15" rx="3" fill="{p["chart"]}" fill-opacity="0.72"/>')
+        out.append(f'<text x="{x0:.1f}" y="{y0 + 10.5:.1f}" font-family="Barlow" font-weight="500" font-size="11" letter-spacing="1.6" fill="{p["ink2"]}">{esc(text)}</text>')
+    for x, y, name, tw, tx in city_labels:
+        th = 14
         out.append(f'<rect x="{tx - 2:.1f}" y="{y - th / 2:.1f}" width="{tw + 4:.1f}" height="{th}" rx="3" fill="{p["chart"]}" fill-opacity="0.7"/>')
         out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.2" fill="{p["ink2"]}" stroke="{p["chart"]}" stroke-width="1"/>')
         out.append(f'<text x="{tx:.1f}" y="{y + 4.2:.1f}" font-family="Barlow" font-weight="500" font-size="12" fill="{p["ink2"]}">{esc(name)}</text>')
@@ -451,15 +510,76 @@ def result(p, ping=None, solid_bar=False):
     return page(p, f'<div class="screen">{statusbar(p)}{topbar}{body}<div class="gesture"></div></div>')
 
 
+def result_area(p, km):
+    """A lookup in the Sacramento area (ipwho.is answering), for showing the chart's town and state names."""
+    chart_h = STATUS + 286
+    lat, lon = 38.5816, -121.4944
+    chart = region_svg(p, W, chart_h, lat, lon, km, "Sacramento", top=STATUS + 58, bottom=46)
+    zoom = (f'<div class="row" style="position:absolute;right:16px;top:{chart_h - 6 - 38}px;gap:8px">'
+            f'{round_button(p, "Minus", bg=p["raised"], size=38, isize=20)}{round_button(p, "Plus", bg=p["raised"], size=38, isize=20)}</div>')
+    topbar = (f'<div class="row" style="position:fixed;left:0;top:{STATUS}px;width:{W}px;padding:8px 12px;z-index:45">'
+              f'{round_button(p, "Back")}<span style="flex:1"></span>{round_button(p, "Star")}<span style="width:8px"></span>{round_button(p, "Share")}</div>')
+    head = (f'<div style="padding-top:6px">'
+            f'<div class="row"><div style="flex:1;font:500 30px/36px Plex;font-feature-settings:\'zero\'">73.162.88.21</div>{round_button(p, "Copy", bg="transparent", tint=p["ink2"])}</div>'
+            f'<div style="font:500 20px/25px Barlow;padding-top:2px">🇺🇸&nbsp;&nbsp;Sacramento, California, United States</div>'
+            f'<div class="row" style="gap:8px;padding-top:12px">{tag(p, "IPv4")}{tag(p, "Public")}</div></div>')
+    net = [section("Network"), info(p, "Provider", "Comcast Cable Communications, LLC"), info(p, "ASN", "AS7922"),
+           info(p, "Hostname", "c-73-162-88-21.hsd1.ca.comcast.net", mono=True), info(p, "Domain", "comcast.net", divider=False)]
+    loc = [section("Location"), info(p, "City", "Sacramento"), info(p, "Region", "California"), info(p, "Postal code", "95814"),
+           info(p, "Country", "🇺🇸 United States (US)", divider=False)]
+    body = (f'<div style="position:relative;height:{chart_h}px">{chart}{zoom}</div>'
+            f'<div style="padding:0 20px">{head}{"".join(net)}{"".join(loc)}<div style="height:200px"></div></div>')
+    return page(p, f'<div class="screen">{statusbar(p, "10:41")}{topbar}{body}<div class="gesture"></div></div>')
+
+
+def choice(p, title, detail, selected, divider=True):
+    ring = p["ink"] if selected else p["ink3"]
+    dot = f'<span style="width:11px;height:11px;border-radius:6px;background:{p["ink"]}"></span>' if selected else ""
+    return (f'<div class="row" style="padding:12px 0"><div style="flex:1;padding-right:12px">'
+            f'<div style="font:500 16px/22px Barlow">{esc(title)}</div><div class="small" style="color:{p["ink2"]}">{esc(detail)}</div></div>'
+            f'<span style="width:22px;height:22px;border-radius:11px;border:1.5px solid {ring};display:flex;align-items:center;justify-content:center;flex:none">{dot}</span></div>'
+            + ('<div class="hair"></div>' if divider else ""))
+
+
+def settings_screen(p):
+    parts = [f'<div style="padding:{STATUS + 18}px 20px 28px">', '<div style="font:600 28px/32px Barlow">Settings</div>']
+    parts.append(section("Look"))
+    parts.append(choice(p, "Match phone", "Day or night, following the phone's dark theme.", True))
+    parts.append(choice(p, "Day chart", "Light: white water and buff land, like a paper chart.", False))
+    parts.append(choice(p, "Night chart", "Dark: deep water and dim land, easy on the eyes at night.", False, divider=False))
+    parts.append('<div id="sources"></div>' + section("Where lookups come from"))
+    parts.append(choice(p, "Automatic", "Asks ipwho.is, then FreeIPAPI, then ipapi.is, moving on when one is busy or out of free lookups, and fills in anything one leaves out.", True))
+    parts.append(choice(p, "ipwho.is first", "City, state, coordinates, network and time zone. 1,000 lookups a day.", False))
+    parts.append(choice(p, "FreeIPAPI first", "City, state, coordinates, network and a proxy check. 60 lookups a minute.", False))
+    parts.append(choice(p, "ipapi.is first", "With a free key: everything, plus VPN, proxy, Tor and hosting checks and abuse contacts (1,000 a day). Without one: city, state and network only, 30 a day.", False, divider=False))
+    parts.append(f'<div class="row" style="padding:12px 0"><div style="flex:1;padding-right:12px"><div style="font:500 16px/22px Barlow">ipapi.is key</div>'
+                 f'<div class="small" style="color:{p["ink2"]}">Optional. A free key adds VPN, proxy, Tor and hosting checks and abuse contacts.</div></div>{icon("Chevron", p["ink3"], 20)}</div>')
+    parts.append(section("History"))
+    parts.append(f'<div class="row" style="padding:12px 0"><div style="flex:1"><div style="font:500 16px/22px Barlow">Keep a history of lookups</div>'
+                 f'<div class="small" style="color:{p["ink2"]}">Starred lookups are always kept.</div></div>'
+                 f'<span style="width:52px;height:32px;border-radius:16px;background:{p["ink"]};position:relative;flex:none"><span style="position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:12px;background:{p["bg"]}"></span></span></div>')
+    parts.append('<div style="height:300px"></div></div>')
+    scrim = f'<div style="position:fixed;left:0;top:0;width:{W}px;height:{STATUS}px;background:{p["bg"]};opacity:.96;z-index:49"></div>'
+    return page(p, f'<div class="screen">{scrim}{statusbar(p, "10:41")}{"".join(parts)}{bottom_bar(p, "SETTINGS")}<div class="gesture"></div></div>')
+
+
 def render():
     from playwright.sync_api import sync_playwright
 
+    which = sys.argv[1] if len(sys.argv) > 1 else "all"
     shots = [
         ("1-home-night.png", home(NIGHT), 0),
         ("2-lookup-night.png", result(NIGHT, ping=0.35), 0),
         ("3-lookup-details-night.png", result(NIGHT, solid_bar=True), "privacy"),
         ("4-lookup-day.png", result(DAY, ping=0.35), 0),
     ]
+    if which == "1.1":
+        shots = [
+            ("1.1-area-600km.png", result_area(NIGHT, 600), 0),
+            ("1.1-area-250km.png", result_area(NIGHT, 250), 0),
+            ("1.1-area-day.png", result_area(DAY, 600), 0),
+            ("1.1-settings.png", settings_screen(NIGHT), "sources"),
+        ]
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         pg = browser.new_page(viewport={"width": W, "height": H}, device_scale_factor=SCALE)

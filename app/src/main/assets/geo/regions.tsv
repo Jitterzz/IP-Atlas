@@ -1,0 +1,335 @@
+C	1	ZW	Zimbabwe
+C	2	ZM	Zambia
+C	3	YE	Yemen
+C	4	VN	Vietnam
+C	5	VE	Venezuela
+C	6	VA	Vatican
+C	7	VU	Vanuatu
+C	8	UZ	Uzbekistan
+C	9	UY	Uruguay
+C	10	FM	Micronesia
+C	11	MH	Marshall Islands
+C	12	MP	Northern Mariana Islands
+C	13	VI	U.S. Virgin Islands
+C	14	GU	Guam
+C	15	AS	American Samoa
+C	16	PR	Puerto Rico
+C	17	US	United States
+C	18	GS	South Georgia and the South Sandwich Islands
+C	19	IO	British Indian Ocean Territory
+C	20	SH	Saint Helena
+C	21	PN	Pitcairn
+C	22	AI	Anguilla
+C	23	FK	Falkland Islands
+C	24	KY	Cayman Islands
+C	25	BM	Bermuda
+C	26	VG	British Virgin Islands
+C	27	TC	Turks and Caicos Islands
+C	28	MS	Montserrat
+C	29	JE	Jersey
+C	30	GG	Guernsey
+C	31	IM	Isle of Man
+C	32	GB	United Kingdom
+C	33	AE	United Arab Emirates
+C	34	UA	Ukraine
+C	35	UG	Uganda
+C	36	TM	Turkmenistan
+C	37	TR	Turkey
+C	38	TN	Tunisia
+C	39	TT	Trinidad and Tobago
+C	40	TO	Tonga
+C	41	TG	Togo
+C	42	TL	Timor Leste
+C	43	TH	Thailand
+C	44	TZ	Tanzania
+C	45	TJ	Tajikistan
+C	46	TW	Taiwan
+C	47	SY	Syria
+C	48	CH	Switzerland
+C	49	SE	Sweden
+C	50	SZ	Eswatini
+C	51	SR	Suriname
+C	52	SS	South Sudan
+C	53	SD	Sudan
+C	54	LK	Sri Lanka
+C	55	ES	Spain
+C	56	KR	South Korea
+C	57	ZA	South Africa
+C	58	SO	Somalia
+C	59	SB	Solomon Islands
+C	60	SK	Slovakia
+C	61	SI	Slovenia
+C	62	SG	Singapore
+C	63	SL	Sierra Leone
+C	64	SC	Seychelles
+C	65	RS	Serbia
+C	66	SN	Senegal
+C	67	SA	Saudi Arabia
+C	68	ST	Sao Tome and Principe
+C	69	SM	San Marino
+C	70	WS	Samoa
+C	71	VC	Saint Vincent and the Grenadines
+C	72	LC	Saint Lucia
+C	73	KN	Saint Kitts and Nevis
+C	74	RW	Rwanda
+C	75	RU	Russia
+C	76	RO	Romania
+C	77	QA	Qatar
+C	78	PT	Portugal
+C	79	PL	Poland
+C	80	PH	Philippines
+C	81	PE	Peru
+C	82	PY	Paraguay
+C	83	PG	Papua New Guinea
+C	84	PA	Panama
+C	85	PW	Palau
+C	86	PK	Pakistan
+C	87	OM	Oman
+C	88	NO	Norway
+C	89	KP	North Korea
+C	90	NG	Nigeria
+C	91	NE	Niger
+C	92	NI	Nicaragua
+C	93	NZ	New Zealand
+C	94	NU	Niue
+C	95	CK	Cook Islands
+C	96	NL	The Netherlands
+C	97	AW	Aruba
+C	98	CW	Curacao
+C	99	NP	Nepal
+C	100	NR	Nauru
+C	101	NA	Namibia
+C	102	MZ	Mozambique
+C	103	MA	Morocco
+C	104	EH	Western Sahara
+C	105	ME	Montenegro
+C	106	MN	Mongolia
+C	107	MD	Moldova
+C	108	MC	Monaco
+C	109	MX	Mexico
+C	110	MU	Mauritius
+C	111	MR	Mauritania
+C	112	MT	Malta
+C	113	ML	Mali
+C	114	MV	Maldives
+C	115	MY	Malaysia
+C	116	MW	Malawi
+C	117	MG	Madagascar
+C	118	MK	North Macedonia
+C	119	LU	Luxembourg
+C	120	LT	Lithuania
+C	121	LI	Liechtenstein
+C	122	LY	Libya
+C	123	LR	Liberia
+C	124	LS	Lesotho
+C	125	LB	Lebanon
+C	126	LV	Latvia
+C	127	LA	Laos
+C	128	KG	Kyrgyzstan
+C	129	KW	Kuwait
+C	130	KI	Kiribati
+C	131	KE	Kenya
+C	132	KZ	Kazakhstan
+C	133	JO	Jordan
+C	134	JP	Japan
+C	135	JM	Jamaica
+C	136	IT	Italy
+C	137	IL	Israel
+C	138	PS	Palestinian Territory
+C	139	IE	Ireland
+C	140	IQ	Iraq
+C	141	IR	Iran
+C	142	ID	Indonesia
+C	143	IN	India
+C	144	IS	Iceland
+C	145	HU	Hungary
+C	146	HN	Honduras
+C	147	HT	Haiti
+C	148	GY	Guyana
+C	149	GW	Guinea-Bissau
+C	150	GN	Guinea
+C	151	GT	Guatemala
+C	152	GD	Grenada
+C	153	GR	Greece
+C	154	GH	Ghana
+C	155	DE	Germany
+C	156	GE	Georgia
+C	157	GM	Gambia
+C	158	GA	Gabon
+C	159	FR	France
+C	160	PM	Saint Pierre and Miquelon
+C	161	WF	Wallis and Futuna
+C	162	MF	Saint Martin
+C	163	BL	Saint Barthelemy
+C	164	PF	French Polynesia
+C	165	NC	New Caledonia
+C	166	TF	French Southern Territories
+C	167	AX	Aland Islands
+C	168	FI	Finland
+C	169	FJ	Fiji
+C	170	ET	Ethiopia
+C	171	EE	Estonia
+C	172	ER	Eritrea
+C	173	GQ	Equatorial Guinea
+C	174	SV	El Salvador
+C	175	EG	Egypt
+C	176	EC	Ecuador
+C	177	DO	Dominican Republic
+C	178	DM	Dominica
+C	179	DJ	Djibouti
+C	180	GL	Greenland
+C	181	FO	Faroe Islands
+C	182	DK	Denmark
+C	183	CZ	Czechia
+C	184	CY	Cyprus
+C	185	CU	Cuba
+C	186	HR	Croatia
+C	187	CI	Ivory Coast
+C	188	CR	Costa Rica
+C	189	CD	Democratic Republic of the Congo
+C	190	CG	Republic of the Congo
+C	191	KM	Comoros
+C	192	CO	Colombia
+C	193	CN	China
+C	194	MO	Macao
+C	195	HK	Hong Kong
+C	196	CL	Chile
+C	197	TD	Chad
+C	198	CF	Central African Republic
+C	199	CV	Cabo Verde
+C	200	CA	Canada
+C	201	CM	Cameroon
+C	202	KH	Cambodia
+C	203	MM	Myanmar
+C	204	BI	Burundi
+C	205	BF	Burkina Faso
+C	206	BG	Bulgaria
+C	207	BN	Brunei
+C	208	BR	Brazil
+C	209	BW	Botswana
+C	210	BA	Bosnia and Herzegovina
+C	211	BO	Bolivia
+C	212	BT	Bhutan
+C	213	BJ	Benin
+C	214	BZ	Belize
+C	215	BE	Belgium
+C	216	BY	Belarus
+C	217	BB	Barbados
+C	218	BD	Bangladesh
+C	219	BH	Bahrain
+C	220	BS	Bahamas
+C	221	AZ	Azerbaijan
+C	222	AT	Austria
+C	223	AU	Australia
+C	224	HM	Heard Island and McDonald Islands
+C	225	NF	Norfolk Island
+C	226	AM	Armenia
+C	227	AR	Argentina
+C	228	AG	Antigua and Barbuda
+C	229	AO	Angola
+C	230	AD	Andorra
+C	231	DZ	Algeria
+C	232	AL	Albania
+C	233	AF	Afghanistan
+C	234	AQ	Antarctica
+C	235	SX	Sint Maarten
+S	1	AU	Western Australia
+S	2	AU	Northern Territory
+S	3	AU	South Australia
+S	4	AU	Queensland
+S	5	AU	Tasmania
+S	6	AU	Victoria
+S	7	AU	Australian Capital Territory
+S	8	AU	Jervis Bay Territory
+S	9	AU	New South Wales
+S	10	BR	Acre
+S	11	BR	Rondônia
+S	12	BR	Roraima
+S	13	BR	Amazonas
+S	14	BR	Pará
+S	15	BR	Mato Grosso do Sul
+S	16	BR	Amapá
+S	17	BR	Mato Grosso
+S	18	BR	Paraná
+S	19	BR	Distrito Federal
+S	20	BR	Goiás
+S	21	BR	Tocantins
+S	22	BR	São Paulo
+S	23	BR	Maranhão
+S	24	BR	Rio de Janeiro
+S	25	BR	Piauí
+S	26	BR	Minas Gerais
+S	27	BR	Espírito Santo
+S	28	BR	Bahia
+S	29	BR	Ceará
+S	30	BR	Sergipe
+S	31	BR	Alagoas
+S	32	BR	Rio Grande do Norte
+S	33	BR	Pernambuco
+S	34	BR	Paraíba
+S	35	BR	Santa Catarina
+S	36	BR	Rio Grande do Sul
+S	37	CA	Alberta
+S	38	CA	British Columbia
+S	39	CA	Manitoba
+S	40	CA	New Brunswick
+S	41	CA	Newfoundland and Labrador
+S	42	CA	Nova Scotia
+S	43	CA	Northwest Territories
+S	44	CA	Nunavut
+S	45	CA	Ontario
+S	46	CA	Prince Edward Island
+S	47	CA	Quebec
+S	48	CA	Saskatchewan
+S	49	CA	Yukon
+S	50	US	Alaska
+S	51	US	Alabama
+S	52	US	Arkansas
+S	53	US	Arizona
+S	54	US	California
+S	55	US	Colorado
+S	56	US	Connecticut
+S	57	US	District of Columbia
+S	58	US	Delaware
+S	59	US	Florida
+S	60	US	Georgia
+S	61	US	Hawaii
+S	62	US	Iowa
+S	63	US	Idaho
+S	64	US	Illinois
+S	65	US	Indiana
+S	66	US	Kansas
+S	67	US	Kentucky
+S	68	US	Louisiana
+S	69	US	Massachusetts
+S	70	US	Maryland
+S	71	US	Maine
+S	72	US	Michigan
+S	73	US	Minnesota
+S	74	US	Missouri
+S	75	US	Mississippi
+S	76	US	Montana
+S	77	US	North Carolina
+S	78	US	North Dakota
+S	79	US	Nebraska
+S	80	US	New Hampshire
+S	81	US	New Jersey
+S	82	US	New Mexico
+S	83	US	Nevada
+S	84	US	New York
+S	85	US	Ohio
+S	86	US	Oklahoma
+S	87	US	Oregon
+S	88	US	Pennsylvania
+S	89	US	Rhode Island
+S	90	US	South Carolina
+S	91	US	South Dakota
+S	92	US	Tennessee
+S	93	US	Texas
+S	94	US	Utah
+S	95	US	Virginia
+S	96	US	Vermont
+S	97	US	Washington
+S	98	US	Wisconsin
+S	99	US	West Virginia
+S	100	US	Wyoming
