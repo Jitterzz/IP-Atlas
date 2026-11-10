@@ -1,0 +1,18 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.kotlin/
+
+# Release signing material from the workflow: never commit
+keystore/
+keystore.properties
+*.jks
+*.keystore
+*service-account*.json
+
+# Python caches from the map-data and preview scripts
+__pycache__/
+tools/out/

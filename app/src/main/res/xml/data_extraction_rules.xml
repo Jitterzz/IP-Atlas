@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- History and settings go along with the phone's backups and moves to a new phone (Android 12 and newer). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="ipatlas.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="ipatlas.xml" />
+    </device-transfer>
+</data-extraction-rules>

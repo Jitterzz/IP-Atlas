@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Behind the app while it opens: the day chart's paper. -->
+    <color name="window">#FFF5F8FA</color>
+    <color name="icon_bg">#FF0B1A2A</color>
+</resources>

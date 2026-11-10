@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A chart globe with the magenta light flare marking a spot on it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M30,54 A24,24 0 1,1 78,54 A24,24 0 1,1 30,54 Z"
+        android:strokeColor="#CDBB86"
+        android:strokeWidth="3" />
+    <path
+        android:pathData="M54,30 A10,24 0 1,1 54,78 A10,24 0 1,1 54,30 Z"
+        android:strokeAlpha="0.75"
+        android:strokeColor="#CDBB86"
+        android:strokeWidth="2.2" />
+    <path
+        android:pathData="M30,54 L78,54"
+        android:strokeAlpha="0.75"
+        android:strokeColor="#CDBB86"
+        android:strokeWidth="2.2" />
+    <path
+        android:fillColor="#F0559E"
+        android:pathData="M48,60 L56.7,40.7 A8,8 0 1,1 67.3,51.3 Z" />
+    <path
+        android:fillColor="#0B1A2A"
+        android:pathData="M41.5,60 A6.5,6.5 0 1,1 54.5,60 A6.5,6.5 0 1,1 41.5,60 Z" />
+    <path
+        android:fillColor="#E6EDF2"
+        android:pathData="M43.5,60 A4.5,4.5 0 1,1 52.5,60 A4.5,4.5 0 1,1 43.5,60 Z" />
+</vector>
